@@ -109,3 +109,13 @@ spring.ai.alibaba.codeact.extension.prompt:
 logging:
   level:
     com.alibaba.assistant.agent: DEBUG
+
+dhgate:
+  assistant:
+    cors:
+      allowed-origins: "https://open.dhgate.com,http://localhost:8080"
+  docs:
+    paths: ""
+    base-url: "https://open.dhgate.com/"
+    max-chunk-chars: 1200
+    snippet-chars: 280

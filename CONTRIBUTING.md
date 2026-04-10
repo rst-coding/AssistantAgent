@@ -25,7 +25,7 @@ Please be respectful and constructive in all interactions. We are committed to p
 
 ### Prerequisites
 
-- **Java 17+** (OpenJDK or GraalVM)
+- **Java 21+** (OpenJDK or GraalVM)
 - **Maven 3.8+**
 - **Git**
 - **IDE**: IntelliJ IDEA (recommended) or Eclipse
@@ -51,7 +51,7 @@ mvn test
 ### IDE Setup (IntelliJ IDEA)
 
 1. **Import Project**: File → Open → Select `pom.xml`
-2. **Configure JDK**: File → Project Structure → SDK → Java 17+
+2. **Configure JDK**: File → Project Structure → SDK → Java 21+
 3. **Enable Annotation Processing**: Settings → Build → Compiler → Annotation Processors → Enable
 
 ### Environment Variables

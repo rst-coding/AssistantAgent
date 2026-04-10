@@ -72,7 +72,6 @@ public class AssistantAgentApplication {
             System.out.println("🚀 Chat with your agent: " + accessUrl);
             System.out.println("📚 Demo experiences loaded");
             System.out.println("🎉========================================🎉\n");
-            System.out.println("🎉========================================🎉\n");
         };
     }
 }

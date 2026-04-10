@@ -142,6 +142,45 @@ public class CodeactAgentConfig {
 			记住：你是代码驱动的Agent！编写返回结果的纯Python函数，执行后用React工具回复用户！
 			""";
 
+	private static final String DHGATE_ASSISTANT_SYSTEM_PROMPT = """
+			你是 DHgate 开放平台的智能问答助手，面向开发者解答开放平台 API、鉴权、签名、错误码、SDK、示例代码等问题。
+
+			【目标】
+			- 给出可直接复制的调用示例
+			- 精准解释参数、返回字段、分页、幂等、限流、异常处理
+			- 提供相关官方文档链接与引用片段，答案可追溯
+
+			【信息来源优先级】
+			1) DHgate 官方内部文档（知识库）与 API 参考
+			2) 联网公开信息（仅用于补充背景或当内部文档缺失时的兜底）
+			当两者冲突时，必须以 DHgate 官方内部文档为准，并在 notes 中说明外部来源可能不一致。
+
+			【必须使用检索】
+			回答前必须先使用 unified_search 检索。
+			- 优先检索 sourceTypes=KNOWLEDGE
+			- 仅当内部文档检索不足以回答时，才允许检索 sourceTypes=WEB 做补充
+
+			【输出格式（强约束）】
+			你必须且只能输出一段 JSON（不要 Markdown），符合如下结构：
+			{
+			  "intent": "api_help|troubleshooting|howto|concept|search",
+			  "answer": {
+			    "summary": "一句话结论",
+			    "steps": ["步骤1","步骤2"],
+			    "example": {"title":"示例标题","language":"bash|json|java|js|python","code":"..."},
+			    "parameters": [{"name":"param","required":true,"type":"string","description":"..."}],
+			    "notes": ["注意事项1"]
+			  },
+			  "links": [{"title":"相关链接","url":"https://..."}],
+			  "citations": [{"title":"文档标题","url":"https://...","snippet":"命中的关键句"}],
+			  "confidence": 0.0
+			}
+
+			【引用要求】
+			- citations 必须优先引用 DHgate 官方文档，且至少 1 条（除非内部文档完全未命中）
+			- 当内部文档未命中时，citations 允许为空，但必须在 notes 中说明，并给出 links 指向最接近的官方入口页
+			""";
+
 	/**
 	 * 任务指令 - 描述具体的工作流程、示例和行为规范
 	 * 作为AgentInstructionMessage（特殊的UserMessage）传递
@@ -280,6 +319,53 @@ public class CodeactAgentConfig {
 				.fastIntentService(fastIntentService)
 				.saver(new MemorySaver()); // 添加 MemorySaver 支持多轮对话上下文保持
 		return builder.build();
+	}
+
+	@Bean(name = "dhgateAssistantAgent")
+	public CodeactAgent dhgateAssistantAgent(
+			ChatModel chatModel,
+			@Autowired(required = false) List<ReplyCodeactTool> replyCodeactTools,
+			@Autowired(required = false) SearchCodeactToolFactory searchCodeactToolFactory,
+			@Autowired(required = false) List<TriggerCodeactTool> triggerCodeactTools,
+			@Autowired(required = false) UnifiedSearchCodeactTool unifiedSearchCodeactTool,
+			@Autowired(required = false) ToolCallbackProvider mcpToolCallbackProvider) {
+
+		List<CodeactTool> allCodeactTools = new ArrayList<>();
+
+		if (unifiedSearchCodeactTool != null) {
+			allCodeactTools.add(unifiedSearchCodeactTool);
+		}
+		if (searchCodeactToolFactory != null) {
+			List<SearchCodeactTool> searchTools = searchCodeactToolFactory.createTools();
+			if (!searchTools.isEmpty()) {
+				allCodeactTools.addAll(searchTools);
+			}
+		}
+		if (replyCodeactTools != null && !replyCodeactTools.isEmpty()) {
+			allCodeactTools.addAll(replyCodeactTools);
+		}
+		if (triggerCodeactTools != null && !triggerCodeactTools.isEmpty()) {
+			allCodeactTools.addAll(triggerCodeactTools);
+		}
+		if (mcpToolCallbackProvider != null) {
+			allCodeactTools.addAll(createMcpDynamicTools(mcpToolCallbackProvider));
+		}
+
+		return CodeactAgent.builder()
+				.name("DhgateAssistantAgent")
+				.description("DHgate 开放平台文档智能问答助手")
+				.systemPrompt(DHGATE_ASSISTANT_SYSTEM_PROMPT)
+				.model(chatModel)
+				.language(Language.PYTHON)
+				.enableInitialCodeGen(false)
+				.allowIO(false)
+				.allowNativeAccess(false)
+				.executionTimeout(30000)
+				.tools(replyCodeactTools != null ? replyCodeactTools.toArray(new ToolCallback[0]) : new ToolCallback[0])
+				.codeactTools(allCodeactTools)
+				.hooks(allHooks)
+				.saver(new MemorySaver())
+				.build();
 	}
 
 	/**
