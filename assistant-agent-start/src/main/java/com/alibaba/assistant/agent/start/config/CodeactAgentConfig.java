@@ -39,6 +39,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -258,6 +259,7 @@ public class CodeactAgentConfig {
 	 * @param mcpToolCallbackProvider MCP工具提供者（由MCP Client Boot Starter自动注入，可选）
 	 */
 	@Bean
+	@org.springframework.context.annotation.Primary  // 标记为主要 Bean，供 AgentStaticLoader 使用
 	public CodeactAgent grayscaleCodeactAgent(
 			ChatModel chatModel,
 			@Autowired(required = false) List<ReplyCodeactTool> replyCodeactTools,

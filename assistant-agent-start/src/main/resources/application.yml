@@ -7,18 +7,62 @@
 spring:
   application:
     name: assistant-agent-full
+  # 禁用所有 DashScope 自动配置（因为使用 DeepSeek）
+  autoconfigure:
+    exclude:
+      # Chat
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeChatAutoConfiguration
+      # Agent
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeAgentAutoConfiguration
+      # Image
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeImageAutoConfiguration
+      # Video
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeVideoAutoConfiguration
+      # Audio
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeAudioTranscriptionAutoConfiguration
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeSpeechSynthesisAutoConfiguration
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeAudioSpeechAutoConfiguration
+      # Embedding
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeEmbeddingAutoConfiguration
+      # Vector Store
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeVectorStoreAutoConfiguration
+      # Rerank
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeRerankAutoConfiguration
 
 server:
   port: 8080
 
 # ============================================================================
-# DashScope Configuration
+# Model Provider Configuration
 # ============================================================================
-spring.ai.dashscope:
-  api-key: ${DASHSCOPE_API_KEY}
+# Choose ONE of the following options:
+#
+# Option 1: DashScope (Alibaba Cloud Qwen)
+# ============================================================================
+#spring.ai.dashscope:
+#  api-key: ${DASHSCOPE_API_KEY}
+#  chat:
+#    options:
+#      model: qwen-max
+
+# ============================================================================
+# Option 2: DeepSeek (Currently Active)
+# ============================================================================
+spring.ai.openai:
+  base-url: https://api.deepseek.com
+  api-key: sk-485faeb0f1af43c5b10c75d1c9ffad75
   chat:
     options:
-      model: qwen-max
+      model: deepseek-chat
+
+# ============================================================================
+# Option 3: OpenAI (Uncomment to use)
+# ============================================================================
+# spring.ai.openai:
+#   api-key: ${OPENAI_API_KEY}
+#   chat:
+#     options:
+#       model: gpt-4o
 
 # ============================================================================
 # Experience Module - with FastIntent enabled
@@ -113,6 +157,8 @@ spring.ai.alibaba.codeact.extension.prompt:
 logging:
   level:
     com.alibaba.assistant.agent: DEBUG
+    org.springframework.ai: DEBUG
+    org.springframework.boot.autoconfigure: DEBUG
 
 dhgate:
   assistant:

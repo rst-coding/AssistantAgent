@@ -60,10 +60,12 @@
             <artifactId>opentelemetry-context</artifactId>
         </dependency>
 
+        <!-- DashScope dependency (暂时注释，因为当前使用 DeepSeek)
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-dashscope</artifactId>
         </dependency>
+        -->
 
         <!-- Test dependencies -->
         <dependency>

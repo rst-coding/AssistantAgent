@@ -32,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -54,6 +56,7 @@ import java.util.List;
 @Configuration
 @EnableConfigurationProperties(DefaultEvaluationProperties.class)
 @ConditionalOnProperty(prefix = "spring.ai.alibaba.codeact.extension.evaluation", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnBean(ChatModel.class)  // 只有在 ChatModel Bean 存在时才启用
 public class DefaultEvaluationSuiteConfig {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultEvaluationSuiteConfig.class);
@@ -71,19 +74,23 @@ public class DefaultEvaluationSuiteConfig {
 
     private final DefaultEvaluationProperties properties;
     private final ChatModel chatModel;
+    private final ChatModel evaluationChatModel;
     private final List<EvaluationCriterionProvider> criterionProviders;
     private final List<Evaluator> customEvaluators;
 
     public DefaultEvaluationSuiteConfig(
             DefaultEvaluationProperties properties,
-            ChatModel chatModel,
+            @Autowired(required = false) ChatModel chatModel,
+            @Qualifier("evaluationModel") @Autowired(required = false) ChatModel evaluationChatModel,
             @Autowired(required = false) List<EvaluationCriterionProvider> criterionProviders,
             @Autowired(required = false) List<Evaluator> customEvaluators) {
         this.properties = properties;
         this.chatModel = chatModel;
+        this.evaluationChatModel = evaluationChatModel;
         this.criterionProviders = criterionProviders;
         this.customEvaluators = customEvaluators;
-        log.info("DefaultEvaluationSuiteConfig#<init> - reason=初始化默认评估套件配置");
+        log.info("DefaultEvaluationSuiteConfig#<init> - reason=初始化默认评估套件配置, hasPrimaryModel={}, hasEvaluationModel={}", 
+                chatModel != null, evaluationChatModel != null);
     }
 
     /**
@@ -145,6 +152,21 @@ public class DefaultEvaluationSuiteConfig {
     }
 
     /**
+     * 获取用于评估的 ChatModel
+     * <p>如果配置了独立的评估模型则使用它，否则回退到主模型
+     *
+     * @return 评估用的 ChatModel
+     */
+    private ChatModel getEvaluationModel() {
+        if (evaluationChatModel != null) {
+            log.debug("DefaultEvaluationSuiteConfig#getEvaluationModel - reason=使用独立评估模型");
+            return evaluationChatModel;
+        }
+        log.debug("DefaultEvaluationSuiteConfig#getEvaluationModel - reason=使用主模型作为评估模型");
+        return chatModel;
+    }
+
+    /**
      * 创建默认评估套件
      */
     private EvaluationSuite createDefaultSuite() {
@@ -181,8 +203,9 @@ public class DefaultEvaluationSuiteConfig {
     private EvaluatorRegistry createDefaultEvaluatorRegistry() {
         EvaluatorRegistry registry = new EvaluatorRegistry();
 
-        // LLM 评估器
-        LLMBasedEvaluator llmEvaluator = new LLMBasedEvaluator(chatModel, "llm-based");
+        // 使用评估专用模型（或主模型）创建 LLM 评估器
+        ChatModel modelForEvaluation = getEvaluationModel();
+        LLMBasedEvaluator llmEvaluator = new LLMBasedEvaluator(modelForEvaluation, "llm-based");
         registry.registerEvaluator(llmEvaluator);
 
         if (customEvaluators != null) {

@@ -31,6 +31,12 @@
             <artifactId>assistant-agent-management</artifactId>
         </dependency>
 
+        <!-- OpenAI Starter (for DeepSeek support) -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
+        </dependency>
+
         <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

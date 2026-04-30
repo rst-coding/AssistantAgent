@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -159,10 +160,8 @@ public class LearningExtensionAutoConfiguration {
 	 */
 	@Bean
 	@ConditionalOnMissingBean
+	@ConditionalOnBean(ChatModel.class)  // 只有在 ChatModel Bean 存在时才创建
 	public ExperienceLearningExtractor experienceLearningExtractor(ChatModel chatModel) {
-		if (chatModel == null) {
-			throw new IllegalStateException("ChatModel is required for ExperienceLearningExtractor. Please configure Spring AI ChatModel bean.");
-		}
 		log.info("LearningExtensionAutoConfiguration#experienceLearningExtractor - reason=creating LLM-based experience learning extractor");
 		return new ExperienceLearningExtractor(chatModel);
 	}
